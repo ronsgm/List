@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Rons Games Library</title>
+  <style>
+    body {font-family: Arial, sans-serif; background:#0f172a; color:#e5e7eb; margin:0;}
+    header {background:#020617; padding:20px; text-align:center;}
+    header h1 {margin:0; color:#38bdf8;}
+    section {padding:20px;}
+    h2 {color:#22d3ee; border-bottom:1px solid #334155; padding-bottom:5px;}
+    table {width:100%; border-collapse:collapse; margin-top:10px;}
+    th, td {border:1px solid #334155; padding:8px;}
+    th {background:#020617;}
+    tr:nth-child(even) {background:#020617;}
+    input, select {width:100%; padding:8px; margin-bottom:8px; border-radius:6px; border:none;}
+    button {padding:8px 12px; border:none; border-radius:6px; cursor:pointer;}
+    .btn-add {background:#22c55e;}
+    .btn-del {background:#ef4444; color:white;}
+    .card {background:#020617; padding:15px; border-radius:10px; margin-bottom:20px;}
+    footer {text-align:center; padding:15px; background:#020617; font-size:14px; color:#94a3b8;}
+  </style>
+</head>
+<body>
+<header>
+  <h1>🎮 RONS GAMES LIBRARY</h1>
+  <p>Katalog Game PS2 • PS3 • PS4</p>
+</header>
+
+<section class="card" id="loginBox">
+  <h2>Login Admin</h2>
+  <input id="username" placeholder="Username" />
+  <input id="password" type="password" placeholder="Password" />
+  <button class="btn-add" onclick="login()">Login</button>
+</section>
+
+<section class="card" id="adminPanel" style="display:none;">
+  <button class="btn-del" style="margin-bottom:10px;width:100%;" onclick="logout()">Logout</button>
+  <h2>Admin – Input Game</h2>
+  <select id="platform">
+    <option value="PS2">PS2</option>
+    <option value="PS3">PS3</option>
+    <option value="PS4">PS4</option>
+  </select>
+  <input id="title" placeholder="Judul Game" />
+  <input id="size" placeholder="Ukuran (GB)" />
+  <button class="btn-add" onclick="addGame()">Tambah Game</button>
+</section>
+
+<section class="card">
+  <input id="search" placeholder="Cari game..." />
+</section>
+
+<section>
+  <h2>PlayStation 2 (PS2)</h2>
+  <table id="PS2"><tr><th>No</th><th>Judul</th><th>GB</th><th>Aksi</th></tr></table>
+</section>
+<section>
+  <h2>PlayStation 3 (PS3)</h2>
+  <table id="PS3"><tr><th>No</th><th>Judul</th><th>GB</th><th>Aksi</th></tr></table>
+</section>
+<section>
+  <h2>PlayStation 4 (PS4)</h2>
+  <table id="PS4"><tr><th>No</th><th>Judul</th><th>GB</th><th>Aksi</th></tr></table>
+</section>
+
+<section class="card">
+  <h2>Total Penyimpanan</h2>
+  <p id="total">0 GB</p>
+</section>
+
+<footer>© 2026 Rons Games</footer>
+
+<script>
+const ADMIN_USER='rons';
+const ADMIN_PASS='12345';
+
+function logout(){
+  localStorage.removeItem('ronsLogin');
+  document.getElementById('adminPanel').style.display='none';
+  document.getElementById('loginBox').style.display='block';
+  render();
+}
+
+function logout(){
+  localStorage.removeItem('ronsLogin');
+  document.getElementById('adminPanel').style.display='none';
+  document.getElementById('loginBox').style.display='block';
+}
+
+function login(){
+  const u=username.value;
+  const p=password.value;
+  if(u===ADMIN_USER && p===ADMIN_PASS){
+    localStorage.setItem('ronsLogin','true');
+    document.getElementById('loginBox').style.display='none';
+    document.getElementById('adminPanel').style.display='block';
+  } else alert('Login gagal');
+}
+
+if(localStorage.getItem('ronsLogin')==='true'){
+  document.addEventListener('DOMContentLoaded',()=>{
+    document.getElementById('loginBox').style.display='none';
+    document.getElementById('adminPanel').style.display='block';
+  });
+}
+
+
+let data = JSON.parse(localStorage.getItem('ronsGames')) || [];
+
+function save(){localStorage.setItem('ronsGames', JSON.stringify(data));}
+
+function isAdmin(){return localStorage.getItem('ronsLogin')==='true';}
+
+function render(){
+  ['PS2','PS3','PS4'].forEach(p=>{
+    const table=document.getElementById(p);
+    table.innerHTML='<tr><th>No</th><th>Judul</th><th>GB</th><th>Aksi</th></tr>';
+    let no=1;
+    data.filter(d=>d.platform===p).forEach((d,i)=>{
+      const row=table.insertRow();
+      row.insertCell(0).innerText=no++;
+      row.insertCell(1).innerText=d.title;
+      row.insertCell(2).innerText=d.size;
+      row.insertCell(3).innerHTML = isAdmin()
+        ? `<button class='btn-del' onclick='del(${i})'>Hapus</button>`
+        : '-' ;
+    });
+  });
+  document.getElementById('total').innerText = data.reduce((a,b)=>a+Number(b.size),0)+' GB';
+}
+
+function addGame(){
+  const p=platform.value;
+  const t=title.value;
+  const s=size.value;
+  if(!t||!s)return alert('Lengkapi data');
+  data.push({platform:p,title:t,size:s});
+  save(); render(); title.value=''; size.value='';
+}
+
+function del(i){
+  if(localStorage.getItem('ronsLogin')!=='true'){
+    alert('Akses ditolak! Hanya admin yang bisa menghapus.');
+    return;
+  }
+  if(confirm('Hapus game?')){
+    data.splice(i,1);
+    save();
+    render();
+  }
+}
+
+function del(i){if(confirm('Hapus game?')){data.splice(i,1); save(); render();}}
+
+search.onkeyup=()=>{
+  const v=search.value.toLowerCase();
+  document.querySelectorAll('table tr').forEach((r,i)=>{
+    if(i===0)return;
+    r.style.display=r.innerText.toLowerCase().includes(v)?'':'none';
+  });
+};
+
+render();
+</script>
+</body>
+</html>
